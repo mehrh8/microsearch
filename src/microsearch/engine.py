@@ -36,7 +36,6 @@ class SearchEngine:
 
     @property
     def avdl(self) -> float:
-        # todo: refactor this. it can be slow to compute it every time. compute it once and cache it
         return sum(len(d) for d in self._documents.values()) / len(self._documents)
 
     def idf(self, kw: str) -> float:
@@ -44,10 +43,9 @@ class SearchEngine:
         n_kw = len(self.get_urls(kw))
         return log((N - n_kw + 0.5) / (n_kw + 0.5) + 1)
 
-    def bm25(self, kw: str) -> dict[str, float]:
+    def bm25(self, kw: str, avdl: float) -> dict[str, float]:
         result = {}
         idf_score = self.idf(kw)
-        avdl = self.avdl
         for url, freq in self.get_urls(kw).items():
             numerator = freq * (self.k1 + 1)
             denominator = freq + self.k1 * (
@@ -59,8 +57,9 @@ class SearchEngine:
     def search(self, query: str) -> dict[str, float]:
         keywords = normalize_string(query).split(" ")
         url_scores: dict[str, float] = {}
+        avdl = self.avdl
         for kw in keywords:
-            kw_urls_score = self.bm25(kw)
+            kw_urls_score = self.bm25(kw, avdl)
             url_scores = update_url_scores(url_scores, kw_urls_score)
         return url_scores
 
